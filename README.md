@@ -87,9 +87,21 @@ AZELL handles massive quantities of complex cells using `@tanstack/react-virtual
    npm run tauri build
    ```
    
+## Releases
+
+Releases are automatically generated when a version tag is pushed.
+
+Example:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+This will trigger the CI pipeline which builds the application for Windows and Linux and publishes the installers to GitHub Releases. For more details, see the [Release Guide](docs/release.md).
+
 ---
 
-*AZELL - Built for frictionless thought.*
 
 <br/>
 <br/>
@@ -184,6 +196,18 @@ O AZELL lida com quantidades massivas de células complexas utilizando `@tanstac
    npm run tauri build
    ```
    
+## Lançamentos (Releases)
+
+Os lançamentos são gerados automaticamente quando uma tag de versão é enviada.
+
+Exemplo:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Isso ativará o pipeline de CI que compila o aplicativo para Windows e Linux e publica os instaladores no GitHub Releases. Para obter mais detalhes, consulte o [Guia de Lançamento](docs/release.md).
+
 ---
 
-*AZELL - Construído para pensamentos sem atrito.*
