@@ -14,6 +14,7 @@
 *   **Dynamic UX**: Resizable sidebar, clean modern dark-theme aesthetics, line-number tracking, sticky action buttons, and drag-to-reorder cell interfaces.
 *   **Smart Undo/Redo Engine**: The app features a highly granular textual and structural history stack. Press `Ctrl+Z` while typing to undo individual keystrokes, or press it outside an edit block to undo structural layout actions (like deleting or moving entire cells).
 *   **Offline-First & Lightning Fast**: No cloud latency, no loading spinners. Everything is saved locally via highly optimized SQLite queries bound directly via Tauri IPC.
+*   **Auto-Update System**: Integrated Tauri updater automatically fetches and applies new releases, keeping the client seamlessly up to date.
 *   **Import / Export Ecosystem**:
     *   **Export Workspace**: Consolidate your knowledge out of AZELL. Click export to generate a folder with standard `.md` files for every tab, and an `images/` directory containing all your physical image assets automatically converted to standard markdown tags.
     *   **Import Markdown**: Drag an `.md` file in to instantly generate a new Workspace + Tab. AZELL automatically parses double-newlines into native cells, processes image syntax `![alt](local_path)`, locates the system files, and ingests them natively.
@@ -123,6 +124,7 @@ This will trigger the CI pipeline which builds the application for Windows and L
 *   **Experiência de Usuário (UX) Dinâmica**: Barra lateral redimensionável, estética moderna e limpa com tema escuro (Dark Theme), rastreamento de números de linha, botões de ação fixos e interfaces para reordenar células arrastando (drag-and-drop).
 *   **Motor Inteligente de Desfazer/Refazer (Undo/Redo)**: O aplicativo possui uma pilha de histórico textual e estrutural altamente granular. Pressione `Ctrl+Z` enquanto digita para desfazer teclas individuais, ou pressione fora de um bloco de edição para desfazer ações de layout estrutural (como excluir ou mover células inteiras).
 *   **Foco Offline e Ultra-Rápido**: Sem latência de nuvem, sem telas de carregamento. Tudo é salvo localmente por meio de consultas SQLite altamente otimizadas, conectadas diretamente via IPC do Tauri.
+*   **Sistema de Atualização Automática**: O atualizador integrado busca e aplica novas versões de forma transparente, mantendo o cliente sempre atualizado.
 *   **Ecossistema de Importação / Exportação**:
     *   **Exportar Workspace**: Consolide seu conhecimento fora do AZELL. Clique em exportar para gerar uma pasta com arquivos `.md` padrões para cada aba, além de um diretório `images/` contendo todos os seus assets físicos de imagem, convertidos automaticamente para tags markdown padrão.
     *   **Importar Markdown**: Arraste um arquivo `.md` para gerar instantaneamente um novo Workspace + Aba. O AZELL analisa automaticamente as quebras duplas de linha, converte em células nativas, processa a sintaxe de imagem `![alt](caminho_local)`, localiza os arquivos do sistema e os ingere nativamente no banco de dados.

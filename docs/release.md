@@ -50,3 +50,16 @@ If a release workflow fails, you can investigate using these strategies:
    npm run tauri build
    ```
 4. **Linux Dependences**: If the build fails on `ubuntu-latest` during Rust compilation, verify that any new native dependencies you may have added to `Cargo.toml` have their corresponding Debian/Ubuntu libraries appended to the `apt-get install` step in the workflow file.
+
+## Auto-Update System
+
+AZELL uses the Tauri updater plugin for over-the-air (OTA) update deployments.
+
+During the GitHub Actions release process, a `latest.json` file is generated containing download links, versions, and cryptographic signatures of the update installers. 
+
+The AZELL client polls this `latest.json` endpoint automatically on startup. If a newer version exists, the application downloads the update, verifies its signature against the internal public key, applies the patch, and relaunches automatically.
+
+### Code Signing
+Updates are cryptographically signed using minisign.
+- The **Public Key** is securely embedded in the application (`tauri.conf.json`).
+- The **Private Key** and its password reside as GitHub repository Action Secrets (`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`).
