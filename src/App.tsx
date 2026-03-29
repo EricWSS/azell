@@ -13,6 +13,7 @@ import {
   dispatchMoveCellDown,
 } from "./editor/CellActionDispatcher";
 import { exportWorkspaceById, importMarkdown } from "./services/importExport";
+import { checkForUpdates } from "./services/updater";
 import "./App.css";
 
 const App: React.FC = () => {
@@ -41,6 +42,10 @@ const App: React.FC = () => {
     if (action === "move_cell_up") dispatchMoveCellUp();
     if (action === "move_cell_down") dispatchMoveCellDown();
 
+    if (action === "check_updates") {
+      checkForUpdates();
+    }
+
     if (action === "export_workspace") {
       if (activeWorkspaceId !== null) {
         exportWorkspaceById(activeWorkspaceId).catch(console.error);
@@ -61,6 +66,11 @@ const App: React.FC = () => {
   const handleMouseDown = React.useCallback(() => {
     isDragging.current = true;
     document.body.style.cursor = "col-resize";
+  }, []);
+
+  React.useEffect(() => {
+    // Check for updates silently on app startup
+    checkForUpdates();
   }, []);
 
   React.useEffect(() => {
