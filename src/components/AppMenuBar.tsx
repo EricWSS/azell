@@ -91,6 +91,7 @@ const MENU_STRUCTURE: MenuGroup[] = [
     {
         label: "Settings",
         items: [
+            { label: "Theme Preferences", action: "settings_theme" },
             { label: "General", action: "settings_general" },
             { label: "Editor", action: "settings_editor" },
             { label: "Appearance", action: "settings_appearance" },
