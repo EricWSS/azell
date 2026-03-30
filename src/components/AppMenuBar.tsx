@@ -1,4 +1,6 @@
 import React from "react";
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { WindowControls } from "./WindowControls";
 
 // ── Menu Structure Definition ──
 
@@ -197,8 +199,24 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, []);
 
+    const handleDoubleClick = async () => {
+        try {
+            const appWindow = getCurrentWindow();
+            const max = await appWindow.isMaximized();
+            if (max) await appWindow.unmaximize();
+            else await appWindow.maximize();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
-        <div className="app-menubar" ref={menuBarRef}>
+        <div
+            className="app-menubar"
+            ref={menuBarRef}
+            data-tauri-drag-region
+            onDoubleClick={handleDoubleClick}
+        >
             <span className="app-menubar__brand">AZELL</span>
             {MENU_STRUCTURE.map((group) => (
                 <div
@@ -243,6 +261,7 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                     )}
                 </div>
             ))}
+            <WindowControls />
         </div>
     );
 };

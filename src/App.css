@@ -86,6 +86,7 @@ body,
   z-index: 5000;
   flex-shrink: 0;
   user-select: none;
+  -webkit-app-region: drag;
 }
 
 .app-menubar__brand {
@@ -111,6 +112,7 @@ body,
   cursor: pointer;
   border-radius: 3px;
   transition: background 0.1s, color 0.1s;
+  -webkit-app-region: no-drag;
 }
 
 .app-menubar__trigger:hover,
