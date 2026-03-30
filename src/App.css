@@ -9,6 +9,21 @@
   box-sizing: border-box;
 }
 
+/* ── Smooth Theme Transitions ── */
+body,
+.app,
+.app-menubar,
+.app-menubar__dropdown,
+.sidebar,
+.main,
+.topbar,
+.tabs-bar,
+.tab-item,
+.cell,
+.cell__textarea {
+  transition: background-color 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
 /* ── Base Theme variables (Defaults) ── */
 :root {
   --bg-primary: #0F1115;
