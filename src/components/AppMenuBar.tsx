@@ -217,7 +217,10 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
             data-tauri-drag-region
             onDoubleClick={handleDoubleClick}
         >
-            <span className="app-menubar__brand">AZELL</span>
+            <h1 className="app-menubar__brand">
+                <span className="brand-a">a</span>
+                <span className="brand-zell">ZELL</span>
+            </h1>
             {MENU_STRUCTURE.map((group) => (
                 <div
                     key={group.label}

@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Montserrat+Alternates:wght@600;700&display=swap");
 
 /* ── Reset ── */
 *,
@@ -90,12 +91,31 @@ body,
 }
 
 .app-menubar__brand {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--accent);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  letter-spacing: -0.03em;
   padding: 0 12px 0 8px;
   margin-right: 4px;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.brand-a {
+  font-family: "Montserrat Alternates", sans-serif;
+  font-weight: 900;
+  font-size: 23px;
+  color: var(--text-primary, #FFFFFF);
+  text-transform: lowercase;
+}
+
+.brand-zell {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text-primary, #FFFFFF);
+  text-transform: uppercase;
 }
 
 .app-menubar__group {
