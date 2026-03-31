@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Montserrat+Alternates:wght@600;700&display=swap");
 
 /* ── Reset ── */
 *,
@@ -9,42 +10,45 @@
   box-sizing: border-box;
 }
 
-/* ── Dark theme (default) ── */
-:root,
-[data-theme="dark"] {
-  --bg: #0f1117;
-  --bg-sidebar: #161822;
-  --bg-surface: #1c1e2b;
-  --bg-hover: #252838;
-  --bg-active: #2a2d42;
-  --border: #2e3148;
-  --text: #e1e3ed;
-  --text-dim: #8b8fa8;
+/* ── Smooth Theme Transitions ── */
+body,
+.app,
+.app-menubar,
+.app-menubar__dropdown,
+.sidebar,
+.main,
+.topbar,
+.tabs-bar,
+.tab-item,
+.cell,
+.cell__textarea {
+  transition: background-color 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ── Base Theme variables (Defaults) ── */
+:root {
+  --bg-primary: #0F1115;
+  --bg-secondary: #161822;
+  --text-primary: #F5F5F2;
+  --text-secondary: #8b8fa8;
+  --border-color: #2A2D34;
   --accent: #7c6bf6;
-  --accent-hover: #9585ff;
+
+  /* Component mapping hooks */
+  --bg: var(--bg-primary);
+  --bg-sidebar: var(--bg-secondary);
+  --bg-surface: var(--bg-secondary);
+  --bg-hover: rgba(124, 107, 246, 0.08);
+  --bg-active: rgba(124, 107, 246, 0.15);
+  --border: var(--border-color);
+  --text: var(--text-primary);
+  --text-dim: var(--text-secondary);
+  --accent-hover: var(--accent);
   --danger: #f65b6b;
   --radius: 6px;
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --toggle-bg: #2e3148;
-  --toggle-thumb: #7c6bf6;
 }
 
-/* ── Light theme ── */
-[data-theme="light"] {
-  --bg: #f5f6fa;
-  --bg-sidebar: #ebedf5;
-  --bg-surface: #ffffff;
-  --bg-hover: #e2e4ee;
-  --bg-active: #d5d8e8;
-  --border: #ccd0de;
-  --text: #1a1c28;
-  --text-dim: #6b6f82;
-  --accent: #6354d9;
-  --accent-hover: #5244c4;
-  --danger: #e04455;
-  --toggle-bg: #ccd0de;
-  --toggle-thumb: #6354d9;
-}
 
 html,
 body,
@@ -83,15 +87,35 @@ body,
   z-index: 5000;
   flex-shrink: 0;
   user-select: none;
+  -webkit-app-region: drag;
 }
 
 .app-menubar__brand {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--accent);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  letter-spacing: -0.03em;
   padding: 0 12px 0 8px;
   margin-right: 4px;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.brand-a {
+  font-family: "Montserrat Alternates", sans-serif;
+  font-weight: 900;
+  font-size: 23px;
+  color: var(--text-primary, #FFFFFF);
+  text-transform: lowercase;
+}
+
+.brand-zell {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text-primary, #FFFFFF);
+  text-transform: uppercase;
 }
 
 .app-menubar__group {
@@ -108,6 +132,7 @@ body,
   cursor: pointer;
   border-radius: 3px;
   transition: background 0.1s, color 0.1s;
+  -webkit-app-region: no-drag;
 }
 
 .app-menubar__trigger:hover,

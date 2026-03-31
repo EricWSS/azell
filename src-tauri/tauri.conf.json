@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Azell",
+  "productName": "Azell-New",
   "version": "0.1.0",
   "identifier": "com.azell.app",
   "build": {
@@ -14,7 +14,9 @@
       {
         "title": "tauri-app",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "decorations": false,
+        "transparent": false
       }
     ],
     "security": {

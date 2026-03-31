@@ -2,7 +2,7 @@ import React from "react";
 import WorkspaceSidebar from "./components/WorkspaceSidebar";
 import TabsBar from "./components/TabsBar";
 import CellsContainer from "./components/CellsContainer";
-import ThemeToggle from "./components/ThemeToggle";
+import { ThemeSettings } from "./components/ThemeSettings";
 import AppMenuBar, { LanguageProvider } from "./components/AppMenuBar";
 import { undoRouterUndo, undoRouterRedo } from "./editor/undo/UndoRouter";
 import { useKeyboardShortcuts } from "./editor/shortcuts/useKeyboardShortcuts";
@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [activeWorkspaceId, setActiveWorkspaceId] = React.useState<number | null>(null);
   const [activeTabId, setActiveTabId] = React.useState<number | null>(null);
   const [sidebarWidth, setSidebarWidth] = React.useState(220);
+  const [showThemeSettings, setShowThemeSettings] = React.useState(false);
 
   const isDragging = React.useRef(false);
 
@@ -44,6 +45,10 @@ const App: React.FC = () => {
 
     if (action === "check_updates") {
       checkForUpdates();
+    }
+
+    if (action === "settings_theme") {
+      setShowThemeSettings(true);
     }
 
     if (action === "export_workspace") {
@@ -103,6 +108,9 @@ const App: React.FC = () => {
   return (
     <LanguageProvider>
       <div className="app">
+        {showThemeSettings && (
+          <ThemeSettings onClose={() => setShowThemeSettings(false)} />
+        )}
         <AppMenuBar onMenuAction={handleMenuAction} />
         <div className="app__body">
           <WorkspaceSidebar
@@ -118,7 +126,6 @@ const App: React.FC = () => {
                 activeTabId={activeTabId}
                 onSelectTab={handleSelectTab}
               />
-              <ThemeToggle />
             </div>
             <CellsContainer tabId={activeTabId} />
           </div>
