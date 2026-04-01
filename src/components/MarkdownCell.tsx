@@ -1,5 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import { Menu } from '@tauri-apps/api/menu';
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import type { Cell } from "../types";
@@ -18,6 +19,8 @@ interface Props {
     cell: Cell;
     onDelete?: (id: number) => void;
     onDuplicate?: (id: number) => void;
+    onMoveUp?: (id: number) => void;
+    onMoveDown?: (id: number) => void;
     onInsertRender?: () => void; // Trigger parent reload
     onContentChange?: (id: number, content: string) => void;
 }
@@ -31,7 +34,7 @@ const COMMANDS: CommandOption[] = [
     { id: "delete", label: "Delete", icon: "×", description: "Exclui esta célula." },
 ];
 
-const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate, onInsertRender, onContentChange }) => {
+const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate, onMoveUp, onMoveDown, onInsertRender, onContentChange }) => {
     const [editing, setEditing] = React.useState(!cell.content);
     const [draft, setDraft] = React.useState(cell.content);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -194,8 +197,46 @@ const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate,
         }
     }, []);
 
+    // Configure Context Menu Native Call
+    const handleContextMenu = React.useCallback(async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (editing) {
+            const menu = await Menu.new({
+                items: [
+                    { id: 'undo', text: 'Undo', action: () => document.execCommand('undo') },
+                    { id: 'redo', text: 'Redo', action: () => document.execCommand('redo') },
+                    { item: 'Separator' },
+                    { id: 'cut', text: 'Cut', action: () => document.execCommand('cut') },
+                    { id: 'copy', text: 'Copy', action: () => document.execCommand('copy') },
+                    { id: 'paste', text: 'Paste', action: () => navigator.clipboard.readText().then(t => document.execCommand('insertText', false, t)).catch(console.error) },
+                    { item: 'Separator' },
+                    { id: 'select-all', text: 'Select All', action: () => document.execCommand('selectAll') },
+                ]
+            });
+            await menu.popup();
+        } else {
+            const menu = await Menu.new({
+                items: [
+                    { id: 'edit', text: '✎ Edit Cell', action: () => setEditing(true) },
+                    { id: 'delete', text: '🗑️ Delete Cell', action: () => onDelete?.(cell.id) },
+                    { item: 'Separator' },
+                    { id: 'move-up', text: '⬆️ Move Up', action: () => onMoveUp?.(cell.id) },
+                    { id: 'move-down', text: '⬇️ Move Down', action: () => onMoveDown?.(cell.id) },
+                    { id: 'duplicate', text: '📋 Duplicate Cell', action: () => onDuplicate?.(cell.id) },
+                ]
+            });
+            await menu.popup();
+        }
+    }, [editing, cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown]);
+
     return (
-        <div className={`cell cell--markdown relative-host${editing ? " cell--focused" : ""}`} data-cell-id={cell.id}>
+        <div
+            className={`cell cell--markdown relative-host${editing ? " cell--focused" : ""}`}
+            data-cell-id={cell.id}
+            onContextMenu={handleContextMenu}
+        >
             <div className="cell__badge">MD</div>
             {editing ? (
                 <>

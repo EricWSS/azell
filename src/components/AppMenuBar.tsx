@@ -1,7 +1,8 @@
 import React from "react";
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WindowControls } from "./WindowControls";
-import { checkForUpdates, UpdateStatus } from '../services/updater';
+import { checkForUpdates, downloadAndInstallUpdate, relaunchApp, UpdateStatus } from '../services/updater';
+import { Update } from '@tauri-apps/plugin-updater';
 
 // ── Menu Structure Definition ──
 
@@ -165,6 +166,7 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
     const menuBarRef = React.useRef<HTMLDivElement>(null);
     const { language, setLanguage } = useLanguage();
     const [updateStatus, setUpdateStatus] = React.useState<UpdateStatus | null>(null);
+    const [currentUpdate, setCurrentUpdate] = React.useState<Update | null>(null);
 
     const handleMenuAction = React.useCallback(
         (action: string) => {
@@ -185,6 +187,9 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                     // Auto-dismiss upToDate after 3s
                     if (status.state === 'upToDate') {
                         setTimeout(() => setUpdateStatus(null), 3000);
+                    }
+                    if (status.state === 'available') {
+                        setCurrentUpdate(status.update);
                     }
                 });
                 return;
@@ -303,9 +308,26 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                 } as React.CSSProperties}>
                     {updateStatus.state === 'checking' && <><span>🔄</span><span>Checking for updates…</span></>}
                     {updateStatus.state === 'upToDate' && <><span>✅</span><span>You're up to date!</span></>}
+
                     {updateStatus.state === 'available' && (
-                        <><span>🆕</span><span>Update {updateStatus.version} available. Downloading…</span></>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>🆕</span>
+                                <span>Update <strong>{updateStatus.update.version}</strong> is available.</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                <button
+                                    onClick={() => setUpdateStatus(null)}
+                                    style={{ padding: '4px 10px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                                >Later</button>
+                                <button
+                                    onClick={() => currentUpdate && downloadAndInstallUpdate(currentUpdate, setUpdateStatus)}
+                                    style={{ padding: '4px 10px', background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                                >Update Now</button>
+                            </div>
+                        </div>
                     )}
+
                     {updateStatus.state === 'downloading' && (
                         <div style={{ flex: 1 }}>
                             <div style={{ marginBottom: 6 }}>⬇️ Downloading… {updateStatus.progress}%</div>
@@ -314,7 +336,26 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                             </div>
                         </div>
                     )}
-                    {updateStatus.state === 'installing' && <><span>⚙️</span><span>Installing… App will restart shortly.</span></>}
+
+                    {updateStatus.state === 'readyToRestart' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>✨</span>
+                                <span>Update downloaded. AZELL needs to restart to apply changes.</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                <button
+                                    onClick={() => setUpdateStatus(null)}
+                                    style={{ padding: '4px 10px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                                >Later</button>
+                                <button
+                                    onClick={() => relaunchApp()}
+                                    style={{ padding: '4px 10px', background: '#E81123', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                                >Restart Now</button>
+                            </div>
+                        </div>
+                    )}
+
                     {updateStatus.state === 'error' && (
                         <><span>❌</span><span style={{ flex: 1 }}>{updateStatus.message}</span>
                             <button onClick={() => setUpdateStatus(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16 }}>×</button></>

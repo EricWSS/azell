@@ -5,31 +5,48 @@ export type UpdateStatus =
   | { state: 'idle' }
   | { state: 'checking' }
   | { state: 'upToDate' }
-  | { state: 'available'; version: string; date: string | null | undefined }
+  | { state: 'available'; update: Update }
   | { state: 'downloading'; progress: number }
-  | { state: 'installing' }
+  | { state: 'readyToRestart' }
   | { state: 'error'; message: string };
 
 export type StatusCallback = (status: UpdateStatus) => void;
 
-export async function checkForUpdates(onStatus?: StatusCallback): Promise<void> {
+/**
+ * Only checks for updates. Returns the Update object if available, or null.
+ */
+export async function checkForUpdates(onStatus?: StatusCallback): Promise<Update | null> {
   const emit = (s: UpdateStatus) => onStatus?.(s);
   try {
     emit({ state: 'checking' });
-
     const update: Update | null = await check();
 
     if (!update?.available) {
       emit({ state: 'upToDate' });
-      return;
+      return null;
     }
 
     emit({
       state: 'available',
-      version: update.version,
-      date: update.date,
+      update: update,
     });
 
+    return update;
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    emit({ state: 'error', message: msg });
+    console.error('[Updater]', msg);
+    return null;
+  }
+}
+
+/**
+ * Explicitly triggers the download and installation of the provided update.
+ * Does NOT restart the app automatically.
+ */
+export async function downloadAndInstallUpdate(update: Update, onStatus?: StatusCallback): Promise<void> {
+  const emit = (s: UpdateStatus) => onStatus?.(s);
+  try {
     let downloaded = 0;
     let total = 0;
 
@@ -47,15 +64,25 @@ export async function checkForUpdates(onStatus?: StatusCallback): Promise<void> 
           });
           break;
         case 'Finished':
-          emit({ state: 'installing' });
+          emit({ state: 'readyToRestart' });
           break;
       }
     });
 
-    await relaunch();
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     emit({ state: 'error', message: msg });
-    console.error('[Updater]', msg);
+    console.error('[Updater Install Error]', msg);
+  }
+}
+
+/**
+ * Relaunches the application to apply the installed update.
+ */
+export async function relaunchApp(): Promise<void> {
+  try {
+    await relaunch();
+  } catch (error) {
+    console.error('[Updater Relaunch Error]', error);
   }
 }

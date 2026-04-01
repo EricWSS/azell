@@ -1,14 +1,19 @@
 import React from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { Menu } from "@tauri-apps/api/menu";
 import type { Cell } from "../types";
 import { saveImageFile, updateCell } from "../services/api";
 
 interface Props {
     cell: Cell;
     onCellUpdated?: (updated: Cell) => void;
+    onDelete?: (id: number) => void;
+    onDuplicate?: (id: number) => void;
+    onMoveUp?: (id: number) => void;
+    onMoveDown?: (id: number) => void;
 }
 
-const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated }) => {
+const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated, onDelete, onDuplicate, onMoveUp, onMoveDown }) => {
     const [dragging, setDragging] = React.useState(false);
     const [localContent, setLocalContent] = React.useState(cell.content);
     const hasImage = localContent.length > 0;
@@ -94,6 +99,22 @@ const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated }) => {
         [hasImage, handleImageBytes]
     );
 
+    const handleContextMenu = React.useCallback(async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const menu = await Menu.new({
+            items: [
+                { id: 'delete', text: '🗑️ Delete Cell', action: () => onDelete?.(cell.id) },
+                { item: 'Separator' },
+                { id: 'move-up', text: '⬆️ Move Up', action: () => onMoveUp?.(cell.id) },
+                { id: 'move-down', text: '⬇️ Move Down', action: () => onMoveDown?.(cell.id) },
+                { id: 'duplicate', text: '📋 Duplicate Cell', action: () => onDuplicate?.(cell.id) },
+            ]
+        });
+        await menu.popup();
+    }, [cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown]);
+
     if (!hasImage) {
         return (
             <div
@@ -116,7 +137,7 @@ const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated }) => {
     }
 
     return (
-        <div className="cell cell--image">
+        <div className="cell cell--image" onContextMenu={handleContextMenu}>
             <div className="cell__badge">IMG</div>
             <img
                 className="cell__image"

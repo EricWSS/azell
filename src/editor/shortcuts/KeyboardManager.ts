@@ -1,4 +1,4 @@
-import { undoRouterUndo, undoRouterRedo } from "../undo/UndoRouter";
+import { globalHistory } from "../history/GlobalHistoryManager";
 import {
     dispatchDeleteCell,
     dispatchDuplicateCell,
@@ -29,8 +29,8 @@ const shortcuts: ShortcutDef[] = [
         label: "Undo",
         ctrl: true,
         key: "z",
-        allowInTextInput: true,
-        handler: () => { undoRouterUndo(); },
+        // allowInTextInput is false to permit the native OS text-undo to work inside cells
+        handler: () => { globalHistory.undo(); },
     },
     {
         id: "redo",
@@ -38,8 +38,14 @@ const shortcuts: ShortcutDef[] = [
         ctrl: true,
         shift: true,
         key: "z",
-        allowInTextInput: true,
-        handler: () => { undoRouterRedo(); },
+        handler: () => { globalHistory.redo(); },
+    },
+    {
+        id: "redo_y",
+        label: "Redo",
+        ctrl: true,
+        key: "y",
+        handler: () => { globalHistory.redo(); },
     },
 
     // ── Cell Manipulation (only outside text inputs) ──

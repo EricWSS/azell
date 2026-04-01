@@ -1,6 +1,9 @@
 import React from "react";
 import type { Tab } from "../types";
-import { getTabs, createTab, deleteTab, renameTab } from "../services/api";
+import { getTabs, createTab } from "../services/api";
+import { useTrash } from "../context/TrashContext";
+import { globalHistory } from "../editor/history/GlobalHistoryManager";
+import { InsertTabCommand, DeleteTabCommand, RenameTabCommand } from "../editor/history/commands/TabCommands";
 
 interface Props {
     workspaceId: number | null;
@@ -12,6 +15,7 @@ const TabsBar: React.FC<Props> = ({ workspaceId, activeTabId, onSelectTab }) => 
     const [tabs, setTabs] = React.useState<Tab[]>([]);
     const [editingId, setEditingId] = React.useState<number | null>(null);
     const [editTitle, setEditTitle] = React.useState("");
+    const { hiddenTabs } = useTrash();
 
     React.useEffect(() => {
         if (workspaceId === null) {
@@ -32,23 +36,28 @@ const TabsBar: React.FC<Props> = ({ workspaceId, activeTabId, onSelectTab }) => 
         createTab(workspaceId, title).then((tab) => {
             setTabs((prev) => [...prev, tab]);
             onSelectTab(tab.id);
+            globalHistory.push(new InsertTabCommand(tab.id, () => { }));
         });
     }, [workspaceId, tabs.length, onSelectTab]);
 
     const handleDelete = React.useCallback(
         (e: React.MouseEvent, id: number) => {
             e.stopPropagation();
-            deleteTab(id).then(() => {
-                setTabs((prev) => {
-                    const next = prev.filter((t) => t.id !== id);
-                    if (activeTabId === id && next.length > 0) {
-                        onSelectTab(next[0].id);
-                    }
-                    return next;
-                });
-            });
+            const cmd = new DeleteTabCommand(
+                id,
+                () => { }, // Let React rendering handle hiddenTabs visual dropping
+                () => { onSelectTab(id); } // Auto-select when undone
+            );
+            cmd.execute();
+            globalHistory.push(cmd);
+
+            // Handle fallback selection immediately
+            const visible = tabs.filter((t) => !hiddenTabs.has(t.id) && t.id !== id);
+            if (activeTabId === id && visible.length > 0) {
+                onSelectTab(visible[0].id);
+            }
         },
-        [activeTabId, onSelectTab]
+        [activeTabId, onSelectTab, hiddenTabs, tabs]
     );
 
     // Double-click to edit tab title
@@ -64,15 +73,16 @@ const TabsBar: React.FC<Props> = ({ workspaceId, activeTabId, onSelectTab }) => 
     const commitRename = React.useCallback(() => {
         if (editingId === null) return;
         const trimmed = editTitle.trim();
-        if (trimmed.length > 0) {
-            renameTab(editingId, trimmed).then(() => {
-                setTabs((prev) =>
-                    prev.map((t) => (t.id === editingId ? { ...t, title: trimmed } : t))
-                );
+        const tab = tabs.find(t => t.id === editingId);
+
+        if (trimmed.length > 0 && tab && tab.title !== trimmed) {
+            const cmd = new RenameTabCommand(editingId, tab.title, trimmed, () => {
+                getTabs(workspaceId!).then(setTabs);
             });
+            cmd.execute().then(() => globalHistory.push(cmd));
         }
         setEditingId(null);
-    }, [editingId, editTitle]);
+    }, [editingId, editTitle, tabs, workspaceId]);
 
     const handleEditKeyDown = React.useCallback(
         (e: React.KeyboardEvent) => {
@@ -86,9 +96,11 @@ const TabsBar: React.FC<Props> = ({ workspaceId, activeTabId, onSelectTab }) => 
         return <div className="tabs-bar tabs-bar--empty">Selecione um workspace</div>;
     }
 
+    const visibleTabs = tabs.filter(t => !hiddenTabs.has(t.id));
+
     return (
         <div className="tabs-bar">
-            {tabs.map((tab) => (
+            {visibleTabs.map((tab) => (
                 <div
                     key={tab.id}
                     className={`tab-item${tab.id === activeTabId ? " tab-item--active" : ""}`}

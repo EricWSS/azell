@@ -27,11 +27,20 @@ const CellRenderer: React.FC<Props> = React.memo(
                         cell={cell}
                         onDelete={onDelete}
                         onDuplicate={onDuplicate}
+                        onMoveUp={onMoveUp}
+                        onMoveDown={onMoveDown}
                         onInsertRender={() => onCellUpdated?.(cell)}
                         onContentChange={onContentChange}
                     />
                 ) : (
-                    <ImageCell cell={cell} onCellUpdated={onCellUpdated} />
+                    <ImageCell
+                        cell={cell}
+                        onCellUpdated={onCellUpdated}
+                        onDelete={onDelete}
+                        onDuplicate={onDuplicate}
+                        onMoveUp={onMoveUp}
+                        onMoveDown={onMoveDown}
+                    />
                 )}
                 <div className="cell-actions">
                     <CellMenu
