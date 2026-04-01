@@ -11,6 +11,9 @@ import { editSessionManager } from "../editor/editing/EditSessionManager";
 import { textUndoManager } from "../editor/undo/TextUndoManager";
 import { updateCell as apiUpdateCell } from "../services/api";
 
+// Use lazy loading for the MermaidElement itself to completely split it from the main bundle until needed.
+const MermaidElement = React.lazy(() => import("./MermaidElement"));
+
 interface Props {
     cell: Cell;
     onDelete?: (id: number) => void;
@@ -224,7 +227,33 @@ const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate,
                 </>
             ) : (
                 <div className="cell__rendered" onDoubleClick={handleDoubleClick}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{draft}</ReactMarkdown>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        components={{
+                            code(props: any) {
+                                const { children, className, node, ...rest } = props;
+                                const match = /language-(\w+)/.exec(className || "");
+                                if (match && match[1] === "mermaid") {
+                                    return (
+                                        <React.Suspense fallback={
+                                            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                                Loading diagram engine...
+                                            </div>
+                                        }>
+                                            <MermaidElement code={String(children).replace(/\n$/, "")} />
+                                        </React.Suspense>
+                                    );
+                                }
+                                return (
+                                    <code className={className} {...rest}>
+                                        {children}
+                                    </code>
+                                );
+                            }
+                        }}
+                    >
+                        {draft}
+                    </ReactMarkdown>
                 </div>
             )}
         </div>
