@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Azell-New",
-  "version": "0.1.0",
+  "productName": "azell",
+  "version": "0.1.4",
   "identifier": "com.azell.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -33,7 +33,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/EricWSS/azell/releases/latest/download/latest.json"
+        "https://raw.githubusercontent.com/EricWSS/azell/main/update.json"
       ],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVEQUFENDJGREFCOTEzQ0IKUldUTEU3bmFMOVNxWFVLSUZTRWlxQ0hKQWRENEt6Y2h0YkM2ZVVGMjV6YXphTzEwU3lCZURheU0K"

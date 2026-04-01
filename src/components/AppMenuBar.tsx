@@ -1,6 +1,7 @@
 import React from "react";
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WindowControls } from "./WindowControls";
+import { checkForUpdates, UpdateStatus } from '../services/updater';
 
 // ── Menu Structure Definition ──
 
@@ -110,6 +111,8 @@ const MENU_STRUCTURE: MenuGroup[] = [
             { label: "Documentation", action: "help_docs" },
             { label: "Keyboard Shortcuts", action: "help_shortcuts" },
             { separator: true, label: "" },
+            { label: "Check for Updates", action: "check_updates" },
+            { separator: true, label: "" },
             { label: "Report Bug", action: "report_bug" },
             { label: "About AZELL", action: "about" },
         ],
@@ -161,10 +164,12 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
     const [openMenu, setOpenMenu] = React.useState<string | null>(null);
     const menuBarRef = React.useRef<HTMLDivElement>(null);
     const { language, setLanguage } = useLanguage();
+    const [updateStatus, setUpdateStatus] = React.useState<UpdateStatus | null>(null);
 
     const handleMenuAction = React.useCallback(
         (action: string) => {
             console.log("Menu action:", action);
+            setOpenMenu(null);
 
             // Handle language switching internally
             if (action === "settings_language") {
@@ -173,6 +178,17 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                 console.log("Language changed to:", next);
             }
 
+            // Handle updater
+            if (action === "check_updates") {
+                checkForUpdates((status) => {
+                    setUpdateStatus(status);
+                    // Auto-dismiss upToDate after 3s
+                    if (status.state === 'upToDate') {
+                        setTimeout(() => setUpdateStatus(null), 3000);
+                    }
+                });
+                return;
+            }
             onMenuAction?.(action);
             setOpenMenu(null);
         },
@@ -265,6 +281,46 @@ const AppMenuBar: React.FC<AppMenuBarProps> = ({ onMenuAction }) => {
                 </div>
             ))}
             <WindowControls />
+
+            {/* ── Update Status Toast ── */}
+            {updateStatus && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    background: 'var(--bg-surface, #1e2129)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    zIndex: 99999,
+                    fontSize: '13px',
+                    color: 'var(--text-primary)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    minWidth: '220px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                } as React.CSSProperties}>
+                    {updateStatus.state === 'checking' && <><span>🔄</span><span>Checking for updates…</span></>}
+                    {updateStatus.state === 'upToDate' && <><span>✅</span><span>You're up to date!</span></>}
+                    {updateStatus.state === 'available' && (
+                        <><span>🆕</span><span>Update {updateStatus.version} available. Downloading…</span></>
+                    )}
+                    {updateStatus.state === 'downloading' && (
+                        <div style={{ flex: 1 }}>
+                            <div style={{ marginBottom: 6 }}>⬇️ Downloading… {updateStatus.progress}%</div>
+                            <div style={{ background: 'var(--border-color)', borderRadius: 4, height: 4 }}>
+                                <div style={{ background: 'var(--accent)', width: `${updateStatus.progress}%`, height: '100%', borderRadius: 4, transition: 'width 0.2s' }} />
+                            </div>
+                        </div>
+                    )}
+                    {updateStatus.state === 'installing' && <><span>⚙️</span><span>Installing… App will restart shortly.</span></>}
+                    {updateStatus.state === 'error' && (
+                        <><span>❌</span><span style={{ flex: 1 }}>{updateStatus.message}</span>
+                            <button onClick={() => setUpdateStatus(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16 }}>×</button></>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
