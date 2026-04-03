@@ -159,7 +159,7 @@ const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated, onDelete, 
     }
 
     return (
-        <div className="cell cell--image" onContextMenu={handleContextMenu}>
+        <div className="cell cell--image" data-cell-id={cell.id} onContextMenu={handleContextMenu}>
             <div className="cell__badge">IMG</div>
             <img
                 className="cell__image"

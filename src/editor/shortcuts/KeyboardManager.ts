@@ -84,8 +84,6 @@ const shortcuts: ShortcutDef[] = [
 
 // ── Keyboard Manager ──
 
-const INPUT_TAGS = new Set(["TEXTAREA", "INPUT"]);
-
 function matchShortcut(e: KeyboardEvent, def: ShortcutDef): boolean {
     if (def.ctrl && !e.ctrlKey && !e.metaKey) return false;
     if (!def.ctrl && (e.ctrlKey || e.metaKey)) return false;
@@ -97,18 +95,30 @@ function matchShortcut(e: KeyboardEvent, def: ShortcutDef): boolean {
 }
 
 function handleKeyDown(e: KeyboardEvent): void {
-    // Need at least one modifier key
     const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
     if (!hasModifier) return;
 
-    const target = e.target as HTMLElement;
-    const isTyping = INPUT_TAGS.has(target.tagName);
+    const activeEl = document.activeElement as HTMLElement;
+    const isEditing = activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT' || activeEl.isContentEditable);
 
     for (const def of shortcuts) {
         if (!matchShortcut(e, def)) continue;
 
-        // Skip shortcuts not allowed in text inputs
-        if (isTyping && !def.allowInTextInput) continue;
+        if (def.id === "undo" || def.id === "redo" || def.id === "redo_y") {
+            if (isEditing) {
+                // DO NOT intercept: let the browser handle native text undo/redo
+                return;
+            } else {
+                // Not editing: let the global history handle it
+                e.preventDefault();
+                e.stopPropagation();
+                def.handler();
+                return;
+            }
+        }
+
+        // Generic block for other shortcuts
+        if (isEditing && !def.allowInTextInput) continue;
 
         e.preventDefault();
         e.stopPropagation();

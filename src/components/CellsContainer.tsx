@@ -154,9 +154,23 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
     const handleDuplicate = React.useCallback(
         (id: number) => {
             duplicateCell(id).then((newCell) => {
-                setCells(prev => [...prev, newCell]);
+                setCells(prev => {
+                    const index = prev.findIndex(c => c.id === id);
+                    if (index === -1) return [...prev, newCell];
+                    return [
+                        ...prev.slice(0, index + 1),
+                        newCell,
+                        ...prev.slice(index + 1)
+                    ];
+                });
                 setSelectedCellId(newCell.id);
                 globalHistory.push(new InsertCellCommand(newCell.id, () => { }));
+
+                // UI FOCUS: scroll into view shortly after DOM repaint
+                setTimeout(() => {
+                    const el = document.querySelector(`[data-cell-id="${newCell.id}"]`);
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
             });
         },
         []
