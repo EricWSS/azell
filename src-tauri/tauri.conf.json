@@ -33,7 +33,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://raw.githubusercontent.com/EricWSS/azell/main/update.json"
+        "https://github.com/EricWSS/azell/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVEQUFENDJGREFCOTEzQ0IKUldUTEU3bmFMOVNxWFVLSUZTRWlxQ0hKQWRENEt6Y2h0YkM2ZVVGMjV6YXphTzEwU3lCZURheU0K"
