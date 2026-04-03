@@ -1,5 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import { useContextMenu } from "../context/ContextMenuContext";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import type { Cell } from "../types";
@@ -18,6 +19,8 @@ interface Props {
     cell: Cell;
     onDelete?: (id: number) => void;
     onDuplicate?: (id: number) => void;
+    onMoveUp?: (id: number) => void;
+    onMoveDown?: (id: number) => void;
     onInsertRender?: () => void; // Trigger parent reload
     onContentChange?: (id: number, content: string) => void;
 }
@@ -31,7 +34,7 @@ const COMMANDS: CommandOption[] = [
     { id: "delete", label: "Delete", icon: "×", description: "Exclui esta célula." },
 ];
 
-const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate, onInsertRender, onContentChange }) => {
+const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate, onMoveUp, onMoveDown, onInsertRender, onContentChange }) => {
     const [editing, setEditing] = React.useState(!cell.content);
     const [draft, setDraft] = React.useState(cell.content);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -194,8 +197,41 @@ const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate,
         }
     }, []);
 
+    // Configure Custom Global Context Menu
+    const { showMenu } = useContextMenu();
+    const handleContextMenu = React.useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (editing) {
+            showMenu(e.clientX, e.clientY, [
+                { id: 'undo', label: 'Undo', icon: '↩️', action: () => document.execCommand('undo') },
+                { id: 'redo', label: 'Redo', icon: '↪️', action: () => document.execCommand('redo') },
+                { id: 'sep1', separator: true },
+                { id: 'cut', label: 'Cut', icon: '✂️', action: () => document.execCommand('cut') },
+                { id: 'copy', label: 'Copy', icon: '📋', action: () => document.execCommand('copy') },
+                { id: 'paste', label: 'Paste', icon: '📋', action: () => navigator.clipboard.readText().then(t => document.execCommand('insertText', false, t)).catch(console.error) },
+                { id: 'sep2', separator: true },
+                { id: 'select-all', label: 'Select All', icon: '☑️', action: () => document.execCommand('selectAll') },
+            ]);
+        } else {
+            showMenu(e.clientX, e.clientY, [
+                { id: 'edit', label: 'Edit Cell', icon: '✎', action: () => setEditing(true) },
+                { id: 'delete', label: 'Delete Cell', icon: '🗑️', action: () => onDelete?.(cell.id), danger: true },
+                { id: 'sep1', separator: true },
+                { id: 'move-up', label: 'Move Up', icon: '⬆️', action: () => onMoveUp?.(cell.id) },
+                { id: 'move-down', label: 'Move Down', icon: '⬇️', action: () => onMoveDown?.(cell.id) },
+                { id: 'duplicate', label: 'Duplicate Cell', icon: '📋', action: () => onDuplicate?.(cell.id) },
+            ]);
+        }
+    }, [editing, cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown, showMenu]);
+
     return (
-        <div className={`cell cell--markdown relative-host${editing ? " cell--focused" : ""}`} data-cell-id={cell.id}>
+        <div
+            className={`cell cell--markdown relative-host${editing ? " cell--focused" : ""}`}
+            data-cell-id={cell.id}
+            onContextMenu={handleContextMenu}
+        >
             <div className="cell__badge">MD</div>
             {editing ? (
                 <>

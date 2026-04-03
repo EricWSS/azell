@@ -1,6 +1,9 @@
 import React from "react";
 import type { Workspace } from "../types";
-import { getWorkspaces, createWorkspace, deleteWorkspace, renameWorkspace } from "../services/api";
+import { getWorkspaces, createWorkspace } from "../services/api";
+import { useTrash } from "../context/TrashContext";
+import { globalHistory } from "../editor/history/GlobalHistoryManager";
+import { InsertWorkspaceCommand, DeleteWorkspaceCommand, RenameWorkspaceCommand } from "../editor/history/commands/WorkspaceCommands";
 
 interface Props {
     activeId: number | null;
@@ -12,6 +15,7 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
     const [workspaces, setWorkspaces] = React.useState<Workspace[]>([]);
     const [editingId, setEditingId] = React.useState<number | null>(null);
     const [editName, setEditName] = React.useState("");
+    const { hiddenWorkspaces } = useTrash();
 
     React.useEffect(() => {
         getWorkspaces().then((list) => {
@@ -27,17 +31,28 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
         createWorkspace(name).then((ws) => {
             setWorkspaces((prev) => [ws, ...prev]);
             onSelect(ws.id);
+            globalHistory.push(new InsertWorkspaceCommand(ws.id, () => { }));
         });
     }, [workspaces.length, onSelect]);
 
     const handleDelete = React.useCallback(
         (e: React.MouseEvent, id: number) => {
             e.stopPropagation();
-            deleteWorkspace(id).then(() => {
-                setWorkspaces((prev) => prev.filter((w) => w.id !== id));
-            });
+            const cmd = new DeleteWorkspaceCommand(
+                id,
+                () => { }, // Let useTrash re-rendering handle row disappearing
+                () => { onSelect(id); } // Auto-select on undo
+            );
+            cmd.execute();
+            globalHistory.push(cmd);
+
+            // If deleting the active workspace, switch to a fallback
+            const visible = workspaces.filter((w) => !hiddenWorkspaces.has(w.id) && w.id !== id);
+            if (activeId === id && visible.length > 0) {
+                onSelect(visible[0].id);
+            }
         },
-        []
+        [activeId, onSelect, hiddenWorkspaces, workspaces]
     );
 
     // Double-click to start editing name
@@ -53,15 +68,16 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
     const commitRename = React.useCallback(() => {
         if (editingId === null) return;
         const trimmed = editName.trim();
-        if (trimmed.length > 0) {
-            renameWorkspace(editingId, trimmed).then(() => {
-                setWorkspaces((prev) =>
-                    prev.map((w) => (w.id === editingId ? { ...w, name: trimmed } : w))
-                );
+        const ws = workspaces.find(w => w.id === editingId);
+
+        if (trimmed.length > 0 && ws && ws.name !== trimmed) {
+            const cmd = new RenameWorkspaceCommand(editingId, ws.name, trimmed, () => {
+                getWorkspaces().then(setWorkspaces);
             });
+            cmd.execute().then(() => globalHistory.push(cmd));
         }
         setEditingId(null);
-    }, [editingId, editName]);
+    }, [editingId, editName, workspaces]);
 
     const handleEditKeyDown = React.useCallback(
         (e: React.KeyboardEvent) => {
@@ -80,7 +96,7 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
                 </button>
             </div>
             <ul className="sidebar__list">
-                {workspaces.map((ws) => (
+                {workspaces.filter(ws => !hiddenWorkspaces.has(ws.id)).map((ws) => (
                     <li
                         key={ws.id}
                         className={`sidebar__item${ws.id === activeId ? " sidebar__item--active" : ""}`}

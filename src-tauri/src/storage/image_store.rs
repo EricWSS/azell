@@ -29,8 +29,7 @@ pub fn save_image(app_data: &Path, raw_bytes: &[u8]) -> Result<String, String> {
     // Re-encode as PNG with compression level 3
     let out_file = fs::File::create(&file_path).map_err(|e| e.to_string())?;
     let encoder = PngEncoder::new_with_quality(out_file, CompressionType::Fast, FilterType::Sub);
-    img.write_with_encoder(encoder)
-        .map_err(|e| e.to_string())?;
+    img.write_with_encoder(encoder).map_err(|e| e.to_string())?;
 
     Ok(file_path.to_string_lossy().to_string())
 }

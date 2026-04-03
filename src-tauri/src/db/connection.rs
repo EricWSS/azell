@@ -35,20 +35,25 @@ impl Database {
 
         if count == 0 {
             use std::time::{SystemTime, UNIX_EPOCH};
-            let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
-            
+            let ts = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64;
+
             // Workspace
             conn.execute(
                 "INSERT INTO workspaces (name, created_at) VALUES (?1, ?2)",
                 rusqlite::params!["WELCOME", ts],
-            ).ok();
+            )
+            .ok();
             let ws_id = conn.last_insert_rowid();
 
             // Tab
             conn.execute(
                 "INSERT INTO tabs (workspace_id, title, created_at) VALUES (?1, ?2, ?3)",
                 rusqlite::params![ws_id, "Getting Started", ts],
-            ).ok();
+            )
+            .ok();
             let tab_id = conn.last_insert_rowid();
 
             // Cells

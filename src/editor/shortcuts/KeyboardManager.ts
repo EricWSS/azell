@@ -1,4 +1,4 @@
-import { undoRouterUndo, undoRouterRedo } from "../undo/UndoRouter";
+import { globalHistory } from "../history/GlobalHistoryManager";
 import {
     dispatchDeleteCell,
     dispatchDuplicateCell,
@@ -29,8 +29,8 @@ const shortcuts: ShortcutDef[] = [
         label: "Undo",
         ctrl: true,
         key: "z",
-        allowInTextInput: true,
-        handler: () => { undoRouterUndo(); },
+        // allowInTextInput is false to permit the native OS text-undo to work inside cells
+        handler: () => { globalHistory.undo(); },
     },
     {
         id: "redo",
@@ -38,8 +38,14 @@ const shortcuts: ShortcutDef[] = [
         ctrl: true,
         shift: true,
         key: "z",
-        allowInTextInput: true,
-        handler: () => { undoRouterRedo(); },
+        handler: () => { globalHistory.redo(); },
+    },
+    {
+        id: "redo_y",
+        label: "Redo",
+        ctrl: true,
+        key: "y",
+        handler: () => { globalHistory.redo(); },
     },
 
     // ── Cell Manipulation (only outside text inputs) ──
@@ -74,40 +80,9 @@ const shortcuts: ShortcutDef[] = [
         handler: () => { dispatchMoveCellDown(); },
     },
 
-    // ── Future shortcuts (placeholder handlers) ──
-    {
-        id: "new_tab",
-        label: "New Tab",
-        ctrl: true,
-        key: "n",
-        handler: () => { console.log("Shortcut: New Tab"); },
-    },
-    {
-        id: "close_tab",
-        label: "Close Tab",
-        ctrl: true,
-        key: "w",
-        handler: () => { console.log("Shortcut: Close Tab"); },
-    },
-    {
-        id: "save",
-        label: "Save",
-        ctrl: true,
-        key: "s",
-        handler: () => { console.log("Shortcut: Save"); },
-    },
-    {
-        id: "toggle_comment",
-        label: "Toggle Comment",
-        ctrl: true,
-        key: "/",
-        handler: () => { console.log("Shortcut: Toggle Comment"); },
-    },
 ];
 
 // ── Keyboard Manager ──
-
-const INPUT_TAGS = new Set(["TEXTAREA", "INPUT"]);
 
 function matchShortcut(e: KeyboardEvent, def: ShortcutDef): boolean {
     if (def.ctrl && !e.ctrlKey && !e.metaKey) return false;
@@ -120,18 +95,30 @@ function matchShortcut(e: KeyboardEvent, def: ShortcutDef): boolean {
 }
 
 function handleKeyDown(e: KeyboardEvent): void {
-    // Need at least one modifier key
     const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
     if (!hasModifier) return;
 
-    const target = e.target as HTMLElement;
-    const isTyping = INPUT_TAGS.has(target.tagName);
+    const activeEl = document.activeElement as HTMLElement;
+    const isEditing = activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT' || activeEl.isContentEditable);
 
     for (const def of shortcuts) {
         if (!matchShortcut(e, def)) continue;
 
-        // Skip shortcuts not allowed in text inputs
-        if (isTyping && !def.allowInTextInput) continue;
+        if (def.id === "undo" || def.id === "redo" || def.id === "redo_y") {
+            if (isEditing) {
+                // DO NOT intercept: let the browser handle native text undo/redo
+                return;
+            } else {
+                // Not editing: let the global history handle it
+                e.preventDefault();
+                e.stopPropagation();
+                def.handler();
+                return;
+            }
+        }
+
+        // Generic block for other shortcuts
+        if (isEditing && !def.allowInTextInput) continue;
 
         e.preventDefault();
         e.stopPropagation();

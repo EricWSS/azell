@@ -1,15 +1,14 @@
 import React from "react";
 import type { Cell } from "../types";
-import {
-    getCells, createCell, deleteCell, saveImageCell,
-    duplicateCell, moveCellUp, moveCellDown,
-} from "../services/api";
+import { getCells, createCell, saveImageCell, duplicateCell } from "../services/api";
 import CellRenderer from "./CellRenderer";
 import InsertCellButton from "./InsertCellButton";
 import { useImagePaste } from "../hooks/useImagePaste";
 import { useImageDrop } from "../hooks/useImageDrop";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useHistory } from "../editor/history/useHistory";
+import { globalHistory } from "../editor/history/GlobalHistoryManager";
+import { InsertCellCommand, DeleteCellCommand, MoveCellCommand } from "../editor/history/commands/CellCommands";
+import { useTrash } from "../context/TrashContext";
 import { registerCellActions, unregisterCellActions } from "../editor/CellActionDispatcher";
 
 // ── Title Cell Detection ──
@@ -36,18 +35,12 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
     const [selectedCellId, setSelectedCellId] = React.useState<number | null>(null);
     const [collapsedSections, setCollapsedSections] = React.useState<Set<number>>(new Set());
     const scrollRef = React.useRef<HTMLDivElement>(null);
+    const { hiddenCells } = useTrash();
 
     const reload = React.useCallback(() => {
         if (tabId === null) return;
         getCells(tabId).then(setCells);
     }, [tabId]);
-
-    // ── History (Undo / Redo) ──
-    const {
-        trackInsert,
-        trackDelete,
-        trackMove,
-    } = useHistory(reload);
 
     React.useEffect(() => {
         if (tabId === null) {
@@ -58,16 +51,6 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
         }
         getCells(tabId).then(setCells);
     }, [tabId]);
-
-    // Auto-select first cell when cells load and nothing is selected
-    React.useEffect(() => {
-        if (cells.length > 0 && selectedCellId === null) {
-            setSelectedCellId(cells[0].id);
-        }
-        if (selectedCellId !== null && !cells.find(c => c.id === selectedCellId)) {
-            setSelectedCellId(cells.length > 0 ? cells[0].id : null);
-        }
-    }, [cells, selectedCellId]);
 
     // ── Toggle collapse ──
     const toggleCollapse = React.useCallback((cellId: number) => {
@@ -87,15 +70,15 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
         const result: Cell[] = [];
         let hiding = false;
 
-        for (let i = 0; i < cells.length; i++) {
-            const cell = cells[i];
+        const effectiveCells = cells.filter(c => !hiddenCells.has(c.id));
+
+        for (let i = 0; i < effectiveCells.length; i++) {
+            const cell = effectiveCells[i];
             const isTitle = isTitleCell(cell);
 
             if (isTitle) {
-                // Any title cell ends the current hidden section
                 hiding = false;
                 result.push(cell);
-                // If this title is collapsed, start hiding subsequent cells
                 if (collapsedSections.has(cell.id)) {
                     hiding = true;
                 }
@@ -107,18 +90,28 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
         }
 
         return result;
-    }, [cells, collapsedSections]);
+    }, [cells, collapsedSections, hiddenCells]);
 
-    // ── Global Ctrl+V paste ──
+    // Auto-select first visible cell when selection disappears or is null
+    React.useEffect(() => {
+        if (visibleCells.length > 0 && selectedCellId === null) {
+            setSelectedCellId(visibleCells[0].id);
+        }
+        if (selectedCellId !== null && !visibleCells.find(c => c.id === selectedCellId)) {
+            setSelectedCellId(visibleCells.length > 0 ? visibleCells[0].id : null);
+        }
+    }, [visibleCells, selectedCellId]);
+
     const handleGlobalImageBytes = React.useCallback(
         (bytes: number[]) => {
             if (tabId === null) return;
             saveImageCell(tabId, bytes).then((cell) => {
-                trackInsert(cell);
-                reload();
+                setCells(prev => [...prev, cell]);
+                setSelectedCellId(cell.id);
+                globalHistory.push(new InsertCellCommand(cell.id, () => { }));
             });
         },
-        [tabId, reload, trackInsert]
+        [tabId]
     );
     useImagePaste(handleGlobalImageBytes, tabId !== null);
 
@@ -148,88 +141,91 @@ const CellsContainer: React.FC<Props> = ({ tabId }) => {
         },
         []
     );
-
     // ── Cell actions (with history tracking) ──
     const handleDelete = React.useCallback(
         (id: number) => {
-            if (cells.length <= 1) return;
-            const cellToDelete = cells.find((c) => c.id === id);
-            const cellIndex = cells.findIndex((c) => c.id === id);
-            deleteCell(id).then(() => {
-                if (cellToDelete) trackDelete(cellToDelete);
-                setCells((prev) => prev.filter((c) => c.id !== id));
-                const nextIdx = cellIndex < cells.length - 1 ? cellIndex + 1 : cellIndex - 1;
-                if (nextIdx >= 0 && nextIdx < cells.length) {
-                    setSelectedCellId(cells[nextIdx].id);
-                }
-            });
+            const cmd = new DeleteCellCommand(id, () => { });
+            cmd.execute();
+            globalHistory.push(cmd);
         },
-        [cells, trackDelete]
+        []
     );
 
     const handleDuplicate = React.useCallback(
         (id: number) => {
             duplicateCell(id).then((newCell) => {
-                trackInsert(newCell);
-                reload();
+                setCells(prev => {
+                    const index = prev.findIndex(c => c.id === id);
+                    if (index === -1) return [...prev, newCell];
+                    return [
+                        ...prev.slice(0, index + 1),
+                        newCell,
+                        ...prev.slice(index + 1)
+                    ];
+                });
                 setSelectedCellId(newCell.id);
+                globalHistory.push(new InsertCellCommand(newCell.id, () => { }));
+
+                // UI FOCUS: scroll into view shortly after DOM repaint
+                setTimeout(() => {
+                    const el = document.querySelector(`[data-cell-id="${newCell.id}"]`);
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
             });
         },
-        [reload, trackInsert]
+        []
     );
 
     const handleMoveUp = React.useCallback(
         (id: number) => {
-            const idx = cells.findIndex((c) => c.id === id);
+            const idx = visibleCells.findIndex((c) => c.id === id);
             if (idx <= 0) return;
-            moveCellUp(id).then(() => {
-                trackMove(id, "up");
-                reload();
-            }).catch(() => { });
+            const cmd = new MoveCellCommand(id, "up", reload);
+            cmd.execute().then(() => globalHistory.push(cmd));
         },
-        [cells, reload, trackMove]
+        [visibleCells, reload]
     );
 
     const handleMoveDown = React.useCallback(
         (id: number) => {
-            const idx = cells.findIndex((c) => c.id === id);
-            if (idx >= cells.length - 1) return;
-            moveCellDown(id).then(() => {
-                trackMove(id, "down");
-                reload();
-            }).catch(() => { });
+            const idx = visibleCells.findIndex((c) => c.id === id);
+            if (idx >= visibleCells.length - 1) return;
+            const cmd = new MoveCellCommand(id, "down", reload);
+            cmd.execute().then(() => globalHistory.push(cmd));
         },
-        [cells, reload, trackMove]
+        [visibleCells, reload]
     );
 
     const handleInsert = React.useCallback(
         (position: number, cellType: number) => {
             if (tabId === null) return;
             createCell(tabId, cellType, "", position).then((cell) => {
-                trackInsert(cell);
+                // To keep ordering proper within UI instantly: 
                 reload();
+                setSelectedCellId(cell.id);
+                globalHistory.push(new InsertCellCommand(cell.id, () => { }));
             });
         },
-        [tabId, reload, trackInsert]
+        [tabId, reload]
     );
 
     const handleAddMarkdown = React.useCallback(() => {
         if (tabId === null) return;
         createCell(tabId, 0, "").then((cell) => {
-            trackInsert(cell);
             setCells((prev) => [...prev, cell]);
             setSelectedCellId(cell.id);
+            globalHistory.push(new InsertCellCommand(cell.id, () => { }));
         });
-    }, [tabId, trackInsert]);
+    }, [tabId]);
 
     const handleAddImage = React.useCallback(() => {
         if (tabId === null) return;
         createCell(tabId, 1, "").then((cell) => {
-            trackInsert(cell);
             setCells((prev) => [...prev, cell]);
             setSelectedCellId(cell.id);
+            globalHistory.push(new InsertCellCommand(cell.id, () => { }));
         });
-    }, [tabId, trackInsert]);
+    }, [tabId]);
 
     // ── Register cell actions with the global dispatcher ──
     React.useEffect(() => {

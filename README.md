@@ -8,12 +8,12 @@
 
 *   **Workspaces & Tabs Architecture**: Keep your thoughts organized. Create independent workspaces, each containing endless tabs for distinct contexts and projects.
 *   **Block-Based Cell Editor**: AZELL uses a cell-based notebook approach.
-    *   **Markdown Cells**: Full GFM (GitHub Flavored Markdown) support for rich text.
-    *   **Image Cells**: Natively drag and drop, or paste from your clipboard. Images are securely stored in the app's internal filesystem (avoiding broken external links).
+    *   **Markdown Cells & Mermaid.js**: Full GFM (GitHub Flavored Markdown) support for rich text, paired natively with Lazy-Loaded Mermaid.js integrations for rendering instant flowchart vectors directly inside your code blocks. 
+    *   **Image Cells (RGBA Pipeline)**: Natively drag and drop, or paste directly from complex external Desktop clipboards (like MS Paint or Discord). We execute deep Rust/Tauri native image decoding specifically handling raw RGBA memory arrays ensuring perfect cross-OS compatibility. Images are securely stored in the app's internal filesystem avoiding broken external links.
+*   **Fully Custom Unified Context Menus**: Ditching broken OS dialogs, the Right-Click and App layouts have been fully replaced with a strict custom window engine matching Windows 11 Acrylic and GTK4 CSS Blur specifications seamlessly interacting over the React DOM.
 *   **Collapsible Sections**: Organizing long documents is effortless. Start a single-line cell with `# Title` and AZELL intelligently turns it into a collapsible section, hiding or showing all cells below it at the click of a button.
 *   **Dynamic UX**: Resizable sidebar, clean modern dark-theme aesthetics, line-number tracking, sticky action buttons, and drag-to-reorder cell interfaces.
-*   **Smart Undo/Redo Engine**: The app features a highly granular textual and structural history stack. Press `Ctrl+Z` while typing to undo individual keystrokes, or press it outside an edit block to undo structural layout actions (like deleting or moving entire cells).
-*   **Offline-First & Lightning Fast**: No cloud latency, no loading spinners. Everything is saved locally via highly optimized SQLite queries bound directly via Tauri IPC.
+*   **Smart Global Undo/Redo Engine**: Completely refactored `Ctrl+Z` Command Pattern engine. The app segregates text modification natively, while structural changes (Delete, Duplicate Array Splicing) are pushed cleanly into a Soft Delete memory architecture bridging SQLite flawlessly on window close.
 *   **Auto-Update System**: Integrated Tauri updater automatically fetches and applies new releases, keeping the client seamlessly up to date.
 *   **Import / Export Ecosystem**:
     *   **Export Workspace**: Consolidate your knowledge out of AZELL. Click export to generate a folder with standard `.md` files for every tab, and an `images/` directory containing all your physical image assets automatically converted to standard markdown tags.
@@ -118,12 +118,13 @@ This will trigger the CI pipeline which builds the application for Windows and L
 
 *   **Arquitetura de Workspaces & Tabs**: Mantenha seus pensamentos organizados. Crie espaços de trabalho (workspaces) independentes, cada um contendo infinitas abas (tabs) para contextos e projetos distintos.
 *   **Editor Baseado em Células (Blocos)**: AZELL usa uma abordagem de notebook baseada em células.
-    *   **Células Markdown**: Suporte completo a GFM (GitHub Flavored Markdown) para textos ricos.
-    *   **Células de Imagem**: Arraste e solte nativamente, ou cole imagens diretamente da sua área de transferência. As imagens são armazenadas de forma segura no sistema de arquivos interno do aplicativo (evitando links externos quebrados).
+    *   **Células Markdown & Mermaid**: Suporte completo a GFM (GitHub Flavored Markdown) para textos ricos, além de integração total com a arquitetura Mermaid.js para criar diagramas de sequência em vetor diretamente no código.
+    *   **Células de Imagem (Engine RGBA Nativo)**: Arraste e solte nativamente, ou cole imagens de qualquer programa externo. Nosso sistema decodifica profundamente pacotes nativos de área de transferência (bits RGBA puros) garantindo compatibilidade com Discord, Paint, Web, e OS nativo. As imagens são armazenadas internamente.
+*   **Menus Contextuais Unificados em HTML**: Extinguimos menus genéricos do Sistema Operacional. Todo o ambiente direito agora responde exclusivamente a um Portal Customizado com UI matching as diretrizes de Blur de fundo do Windows 11 Acrylic e GTK4.
 *   **Seções Colapsáveis**: Organizar documentos longos é fácil. Inicie uma nova célula de linha única com `# Título` e o AZELL a transforma de forma inteligente em uma seção colapsável, ocultando ou exibindo todas as células abaixo dela com o clique de um botão.
-*   **Experiência de Usuário (UX) Dinâmica**: Barra lateral redimensionável, estética moderna e limpa com tema escuro (Dark Theme), rastreamento de números de linha, botões de ação fixos e interfaces para reordenar células arrastando (drag-and-drop).
-*   **Motor Inteligente de Desfazer/Refazer (Undo/Redo)**: O aplicativo possui uma pilha de histórico textual e estrutural altamente granular. Pressione `Ctrl+Z` enquanto digita para desfazer teclas individuais, ou pressione fora de um bloco de edição para desfazer ações de layout estrutural (como excluir ou mover células inteiras).
-*   **Foco Offline e Ultra-Rápido**: Sem latência de nuvem, sem telas de carregamento. Tudo é salvo localmente por meio de consultas SQLite altamente otimizadas, conectadas diretamente via IPC do Tauri.
+*   **Experiência de Usuário (UX) Dinâmica**: Barra lateral redimensionável, estética moderna e limpa com tema escuro (Dark Theme), rastreamento de números de linha, botões de ação fixos e interfaces para reordenar células arrastando e deslizando fisicamente a matemática da lista.
+*   **Motor Global Inteligente Undo/Redo**: Motor todo reestruturado no padrão Command. Textos rolam pelo navegador na proteção `textarea`, já elementos deletados ou re-ordenados caem num Sistema Rápido de "Soft Delete Memory" garantindo performance absurda sem detonações SQL antes de você realmente fechar o APP.
+*   **Foco Offline e Ultra-Rápido**: Sem latência de nuvem, sem telas de carregamento. Tudo é salvo localmente por meio de consultas SQLite altamente otimizadas, conectadas diretamente via IPC do Tauri com permissões explícitas.
 *   **Sistema de Atualização Automática**: O atualizador integrado busca e aplica novas versões de forma transparente, mantendo o cliente sempre atualizado.
 *   **Ecossistema de Importação / Exportação**:
     *   **Exportar Workspace**: Consolide seu conhecimento fora do AZELL. Clique em exportar para gerar uma pasta com arquivos `.md` padrões para cada aba, além de um diretório `images/` contendo todos os seus assets físicos de imagem, convertidos automaticamente para tags markdown padrão.

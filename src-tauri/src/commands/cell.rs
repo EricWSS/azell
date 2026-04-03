@@ -42,7 +42,10 @@ pub fn create_cell(
     )
     .map_err(|e| e.to_string())?;
     let id = conn.last_insert_rowid();
-    eprintln!("[DEBUG] create_cell id={} tab_id={} type={} pos={}", id, tab_id, cell_type, pos);
+    eprintln!(
+        "[DEBUG] create_cell id={} tab_id={} type={} pos={}",
+        id, tab_id, cell_type, pos
+    );
     Ok(Cell {
         id,
         tab_id,
@@ -57,10 +60,7 @@ pub fn create_cell(
 /// Save image bytes to filesystem (compressed PNG). Returns the file path only.
 /// Does NOT create a cell — use update_cell to set the path on an existing cell.
 #[tauri::command]
-pub fn save_image_file(
-    app: tauri::AppHandle,
-    image_bytes: Vec<u8>,
-) -> Result<String, String> {
+pub fn save_image_file(app: tauri::AppHandle, image_bytes: Vec<u8>) -> Result<String, String> {
     let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let path = image_store::save_image(&app_data, &image_bytes)?;
     eprintln!("[DEBUG] save_image_file path={}", path);
@@ -139,7 +139,11 @@ pub fn list_cells(db: State<'_, Database>, tab_id: i64) -> Result<Vec<Cell>, Str
     for r in rows {
         result.push(r.map_err(|e| e.to_string())?);
     }
-    eprintln!("[DEBUG] list_cells tab_id={} count={}", tab_id, result.len());
+    eprintln!(
+        "[DEBUG] list_cells tab_id={} count={}",
+        tab_id,
+        result.len()
+    );
     Ok(result)
 }
 
@@ -152,7 +156,11 @@ pub fn update_cell(db: State<'_, Database>, id: i64, content: String) -> Result<
         rusqlite::params![content, ts, id],
     )
     .map_err(|e| e.to_string())?;
-    eprintln!("[DEBUG] update_cell id={} content_len={}", id, content.len());
+    eprintln!(
+        "[DEBUG] update_cell id={} content_len={}",
+        id,
+        content.len()
+    );
     Ok(())
 }
 
@@ -210,7 +218,10 @@ pub fn duplicate_cell(db: State<'_, Database>, id: i64) -> Result<Cell, String> 
     )
     .map_err(|e| e.to_string())?;
     let new_id = conn.last_insert_rowid();
-    eprintln!("[DEBUG] duplicate_cell original={} new={} pos={}", id, new_id, new_position);
+    eprintln!(
+        "[DEBUG] duplicate_cell original={} new={} pos={}",
+        id, new_id, new_position
+    );
     Ok(Cell {
         id: new_id,
         tab_id: original.tab_id,
@@ -247,11 +258,13 @@ pub fn move_cell_up(db: State<'_, Database>, id: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE cells SET position = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![prev.1, ts, id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE cells SET position = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![current.1, ts, prev.0],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
     eprintln!("[DEBUG] move_cell_up id={} swapped with id={}", id, prev.0);
     Ok(())
@@ -282,13 +295,17 @@ pub fn move_cell_down(db: State<'_, Database>, id: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE cells SET position = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![next.1, ts, id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE cells SET position = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![current.1, ts, next.0],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
-    eprintln!("[DEBUG] move_cell_down id={} swapped with id={}", id, next.0);
+    eprintln!(
+        "[DEBUG] move_cell_down id={} swapped with id={}",
+        id, next.0
+    );
     Ok(())
 }
-

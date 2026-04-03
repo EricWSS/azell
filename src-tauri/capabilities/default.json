@@ -16,6 +16,14 @@
     "core:window:allow-set-focus",
     "opener:default",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "process:allow-exit",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-image",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [{ "path": "**" }]
+    }
   ]
 }
