@@ -109,3 +109,4 @@ jobs:
             ${{ steps.changelog.outputs.changelog }}
 
           args: ${{ matrix.args }}
+          includeUpdaterJson: true
