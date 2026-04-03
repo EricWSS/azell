@@ -1,6 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Menu } from '@tauri-apps/api/menu';
+import { useContextMenu } from "../context/ContextMenuContext";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import type { Cell } from "../types";
@@ -197,39 +197,34 @@ const MarkdownCell: React.FC<Props> = React.memo(({ cell, onDelete, onDuplicate,
         }
     }, []);
 
-    // Configure Context Menu Native Call
-    const handleContextMenu = React.useCallback(async (e: React.MouseEvent) => {
+    // Configure Custom Global Context Menu
+    const { showMenu } = useContextMenu();
+    const handleContextMenu = React.useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (editing) {
-            const menu = await Menu.new({
-                items: [
-                    { id: 'undo', text: 'Undo', action: () => document.execCommand('undo') },
-                    { id: 'redo', text: 'Redo', action: () => document.execCommand('redo') },
-                    { item: 'Separator' },
-                    { id: 'cut', text: 'Cut', action: () => document.execCommand('cut') },
-                    { id: 'copy', text: 'Copy', action: () => document.execCommand('copy') },
-                    { id: 'paste', text: 'Paste', action: () => navigator.clipboard.readText().then(t => document.execCommand('insertText', false, t)).catch(console.error) },
-                    { item: 'Separator' },
-                    { id: 'select-all', text: 'Select All', action: () => document.execCommand('selectAll') },
-                ]
-            });
-            await menu.popup();
+            showMenu(e.clientX, e.clientY, [
+                { id: 'undo', label: 'Undo', icon: '↩️', action: () => document.execCommand('undo') },
+                { id: 'redo', label: 'Redo', icon: '↪️', action: () => document.execCommand('redo') },
+                { id: 'sep1', separator: true },
+                { id: 'cut', label: 'Cut', icon: '✂️', action: () => document.execCommand('cut') },
+                { id: 'copy', label: 'Copy', icon: '📋', action: () => document.execCommand('copy') },
+                { id: 'paste', label: 'Paste', icon: '📋', action: () => navigator.clipboard.readText().then(t => document.execCommand('insertText', false, t)).catch(console.error) },
+                { id: 'sep2', separator: true },
+                { id: 'select-all', label: 'Select All', icon: '☑️', action: () => document.execCommand('selectAll') },
+            ]);
         } else {
-            const menu = await Menu.new({
-                items: [
-                    { id: 'edit', text: '✎ Edit Cell', action: () => setEditing(true) },
-                    { id: 'delete', text: '🗑️ Delete Cell', action: () => onDelete?.(cell.id) },
-                    { item: 'Separator' },
-                    { id: 'move-up', text: '⬆️ Move Up', action: () => onMoveUp?.(cell.id) },
-                    { id: 'move-down', text: '⬇️ Move Down', action: () => onMoveDown?.(cell.id) },
-                    { id: 'duplicate', text: '📋 Duplicate Cell', action: () => onDuplicate?.(cell.id) },
-                ]
-            });
-            await menu.popup();
+            showMenu(e.clientX, e.clientY, [
+                { id: 'edit', label: 'Edit Cell', icon: '✎', action: () => setEditing(true) },
+                { id: 'delete', label: 'Delete Cell', icon: '🗑️', action: () => onDelete?.(cell.id), danger: true },
+                { id: 'sep1', separator: true },
+                { id: 'move-up', label: 'Move Up', icon: '⬆️', action: () => onMoveUp?.(cell.id) },
+                { id: 'move-down', label: 'Move Down', icon: '⬇️', action: () => onMoveDown?.(cell.id) },
+                { id: 'duplicate', label: 'Duplicate Cell', icon: '📋', action: () => onDuplicate?.(cell.id) },
+            ]);
         }
-    }, [editing, cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown]);
+    }, [editing, cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown, showMenu]);
 
     return (
         <div

@@ -1,6 +1,6 @@
 import React from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Menu } from "@tauri-apps/api/menu";
+import { useContextMenu } from "../context/ContextMenuContext";
 import type { Cell } from "../types";
 import { saveImageFile, updateCell } from "../services/api";
 
@@ -99,21 +99,43 @@ const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated, onDelete, 
         [hasImage, handleImageBytes]
     );
 
+    const [showCopyToast, setShowCopyToast] = React.useState(false);
+
+    const handleCopyImage = React.useCallback(async () => {
+        if (!hasImage || !localContent) return;
+        try {
+            // Priority: Read physical bytes via FS
+            const { Image } = await import("@tauri-apps/api/image");
+            const img = await Image.fromPath(localContent);
+            console.log(`[ImageCell] RGBA Image Decoded from: ${localContent}`);
+
+            // Gravar RGBA diretos no sistema nativo
+            const { writeImage } = await import("@tauri-apps/plugin-clipboard-manager");
+            await writeImage(img);
+            console.log(`[ImageCell] Copiado com Sucesso para o OS via plugin.`);
+
+            setShowCopyToast(true);
+            setTimeout(() => setShowCopyToast(false), 2000);
+        } catch (err) {
+            console.error("[ImageCell] [CRITICAL] Copy Image via Image/Plugin Failed:", err);
+        }
+    }, [hasImage, localContent]);
+
+    const { showMenu } = useContextMenu();
+
     const handleContextMenu = React.useCallback(async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const menu = await Menu.new({
-            items: [
-                { id: 'delete', text: '🗑️ Delete Cell', action: () => onDelete?.(cell.id) },
-                { item: 'Separator' },
-                { id: 'move-up', text: '⬆️ Move Up', action: () => onMoveUp?.(cell.id) },
-                { id: 'move-down', text: '⬇️ Move Down', action: () => onMoveDown?.(cell.id) },
-                { id: 'duplicate', text: '📋 Duplicate Cell', action: () => onDuplicate?.(cell.id) },
-            ]
-        });
-        await menu.popup();
-    }, [cell.id, onDelete, onDuplicate, onMoveUp, onMoveDown]);
+        showMenu(e.clientX, e.clientY, [
+            { id: 'copy', label: 'Copy Image', icon: '📋', action: handleCopyImage },
+            { id: 'sep1', separator: true },
+            { id: 'delete', label: 'Delete Cell', icon: '🗑️', danger: true, action: () => onDelete?.(cell.id) },
+            { id: 'move-up', label: 'Move Up', icon: '⬆️', action: () => onMoveUp?.(cell.id) },
+            { id: 'move-down', label: 'Move Down', icon: '⬇️', action: () => onMoveDown?.(cell.id) },
+            { id: 'duplicate', label: 'Duplicate Cell', icon: '📋', action: () => onDuplicate?.(cell.id) },
+        ]);
+    }, [cell.id, handleCopyImage, onDelete, onDuplicate, onMoveUp, onMoveDown, showMenu]);
 
     if (!hasImage) {
         return (
@@ -150,6 +172,23 @@ const ImageCell: React.FC<Props> = React.memo(({ cell, onCellUpdated, onDelete, 
                 }}
                 onError={(e) => console.error("[ImageCell] img load error, src:", (e.target as HTMLImageElement).src)}
             />
+            {showCopyToast && (
+                <div style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    background: "rgba(0,0,0,0.75)",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "0.8rem",
+                    pointerEvents: "none",
+                    animation: "fadeIn 0.2s ease",
+                    zIndex: 10
+                }}>
+                    Image copied to clipboard!
+                </div>
+            )}
         </div>
     );
 });

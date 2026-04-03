@@ -52,8 +52,11 @@ pub fn list_workspaces(db: State<'_, Database>) -> Result<Vec<Workspace>, String
 #[tauri::command]
 pub fn delete_workspace(db: State<'_, Database>, id: i64) -> Result<(), String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM workspaces WHERE id = ?1", rusqlite::params![id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM workspaces WHERE id = ?1",
+        rusqlite::params![id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 

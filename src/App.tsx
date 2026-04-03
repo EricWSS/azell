@@ -4,6 +4,7 @@ import TabsBar from "./components/TabsBar";
 import CellsContainer from "./components/CellsContainer";
 import { ThemeSettings } from "./components/ThemeSettings";
 import AppMenuBar, { LanguageProvider } from "./components/AppMenuBar";
+import { ContextMenuProvider } from "./context/ContextMenuContext";
 import { globalHistory } from "./editor/history/GlobalHistoryManager";
 import { useKeyboardShortcuts } from "./editor/shortcuts/useKeyboardShortcuts";
 import {
@@ -113,6 +114,7 @@ const App: React.FC = () => {
     let isClosing = false;
     const w = getCurrentWindow();
     const unlistenPromise = w.onCloseRequested(async (event) => {
+      console.log("🚨 [App] Close requested! Initiating Hard Delete flush...");
       if (isClosing) return; // Prevent infinite close loop Native -> JS -> Native
       isClosing = true;
       event.preventDefault();
@@ -128,12 +130,13 @@ const App: React.FC = () => {
         // Ensure we NEVER hang the UI closing permanently
         await Promise.race([
           Promise.all(promises),
-          new Promise((resolve) => setTimeout(resolve, 2000))
+          new Promise((resolve) => setTimeout(resolve, 1000))
         ]);
       } catch (err) {
         console.error("Erro ao limpar lixeira durante fechamento", err);
       } finally {
-        await w.close();
+        const { exit } = await import("@tauri-apps/plugin-process");
+        await exit(0);
       }
     });
 
@@ -144,30 +147,32 @@ const App: React.FC = () => {
 
   return (
     <LanguageProvider>
-      <div className="app">
-        {showThemeSettings && (
-          <ThemeSettings onClose={() => setShowThemeSettings(false)} />
-        )}
-        <AppMenuBar onMenuAction={handleMenuAction} />
-        <div className="app__body">
-          <WorkspaceSidebar
-            activeId={activeWorkspaceId}
-            onSelect={handleSelectWorkspace}
-            width={sidebarWidth}
-          />
-          <div className="resizer" onMouseDown={handleMouseDown} />
-          <div className="main">
-            <div className="topbar">
-              <TabsBar
-                workspaceId={activeWorkspaceId}
-                activeTabId={activeTabId}
-                onSelectTab={handleSelectTab}
-              />
+      <ContextMenuProvider>
+        <div className="app">
+          {showThemeSettings && (
+            <ThemeSettings onClose={() => setShowThemeSettings(false)} />
+          )}
+          <AppMenuBar onMenuAction={handleMenuAction} />
+          <div className="app__body">
+            <WorkspaceSidebar
+              activeId={activeWorkspaceId}
+              onSelect={handleSelectWorkspace}
+              width={sidebarWidth}
+            />
+            <div className="resizer" onMouseDown={handleMouseDown} />
+            <div className="main">
+              <div className="topbar">
+                <TabsBar
+                  workspaceId={activeWorkspaceId}
+                  activeTabId={activeTabId}
+                  onSelectTab={handleSelectTab}
+                />
+              </div>
+              <CellsContainer tabId={activeTabId} />
             </div>
-            <CellsContainer tabId={activeTabId} />
           </div>
         </div>
-      </div>
+      </ContextMenuProvider>
     </LanguageProvider>
   );
 };

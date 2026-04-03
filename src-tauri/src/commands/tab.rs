@@ -11,7 +11,11 @@ fn now() -> i64 {
 }
 
 #[tauri::command]
-pub fn create_tab(db: State<'_, Database>, workspace_id: i64, title: String) -> Result<Tab, String> {
+pub fn create_tab(
+    db: State<'_, Database>,
+    workspace_id: i64,
+    title: String,
+) -> Result<Tab, String> {
     let ts = now();
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute(

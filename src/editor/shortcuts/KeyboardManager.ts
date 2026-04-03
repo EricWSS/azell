@@ -80,35 +80,6 @@ const shortcuts: ShortcutDef[] = [
         handler: () => { dispatchMoveCellDown(); },
     },
 
-    // ── Future shortcuts (placeholder handlers) ──
-    {
-        id: "new_tab",
-        label: "New Tab",
-        ctrl: true,
-        key: "n",
-        handler: () => { console.log("Shortcut: New Tab"); },
-    },
-    {
-        id: "close_tab",
-        label: "Close Tab",
-        ctrl: true,
-        key: "w",
-        handler: () => { console.log("Shortcut: Close Tab"); },
-    },
-    {
-        id: "save",
-        label: "Save",
-        ctrl: true,
-        key: "s",
-        handler: () => { console.log("Shortcut: Save"); },
-    },
-    {
-        id: "toggle_comment",
-        label: "Toggle Comment",
-        ctrl: true,
-        key: "/",
-        handler: () => { console.log("Shortcut: Toggle Comment"); },
-    },
 ];
 
 // ── Keyboard Manager ──
