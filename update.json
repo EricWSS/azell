@@ -1,11 +1,11 @@
 {
-    "version": "0.1.4",
-    "notes": "AZELL v0.1.4 – Unified product branding and improved update pipeline.",
-    "pub_date": "2026-04-01T12:00:00Z",
+    "version": "0.2.0",
+    "notes": "AZELL v0.2.0 – The Stability Update",
+    "pub_date": "2026-04-03T12:00:00Z",
     "platforms": {
         "windows-x86_64": {
             "signature": "PASTE_SIGNATURE_FROM_MSI_ZIP_SIG_FILE",
-            "url": "https://github.com/EricWSS/azell/releases/download/v0.1.4/azell_0.1.4_x64_en-US.msi.zip"
+            "url": "https://github.com/EricWSS/azell/releases/download/v0.2.0/azell_0.2.0_x64_en-US.msi.zip"
         }
     }
 }
