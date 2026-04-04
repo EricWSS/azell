@@ -1,9 +1,10 @@
 import React from "react";
 import type { Workspace } from "../types";
-import { getWorkspaces, createWorkspace } from "../services/api";
+import { getWorkspaces } from "../services/api";
 import { useTrash } from "../context/TrashContext";
 import { globalHistory } from "../editor/history/GlobalHistoryManager";
-import { InsertWorkspaceCommand, DeleteWorkspaceCommand, RenameWorkspaceCommand } from "../editor/history/commands/WorkspaceCommands";
+import { CreateWorkspaceCommand, DeleteWorkspaceCommand, RenameWorkspaceCommand } from "../editor/history/commands/WorkspaceCommands";
+import { registerWorkspaceActions, unregisterWorkspaceActions } from "../editor/WorkspaceActionDispatcher";
 
 interface Props {
     activeId: number | null;
@@ -17,7 +18,7 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
     const [editName, setEditName] = React.useState("");
     const { hiddenWorkspaces } = useTrash();
 
-    React.useEffect(() => {
+    const fetchWorkspaces = React.useCallback(() => {
         getWorkspaces().then((list) => {
             setWorkspaces(list);
             if (activeId === null && list.length > 0) {
@@ -26,14 +27,28 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
         });
     }, [activeId, onSelect]);
 
+    React.useEffect(() => {
+        fetchWorkspaces();
+    }, [fetchWorkspaces]);
+
     const handleAdd = React.useCallback(() => {
         const name = `Workspace ${workspaces.length + 1}`;
-        createWorkspace(name).then((ws) => {
-            setWorkspaces((prev) => [ws, ...prev]);
-            onSelect(ws.id);
-            globalHistory.push(new InsertWorkspaceCommand(ws.id, () => { }));
+        const cmd = new CreateWorkspaceCommand(name, (id) => {
+            if (id !== null) onSelect(id);
+        }, () => {
+            fetchWorkspaces();
         });
-    }, [workspaces.length, onSelect]);
+
+        cmd.execute().then(() => globalHistory.push(cmd));
+    }, [workspaces.length, onSelect, fetchWorkspaces]);
+
+    // Register global actions
+    React.useEffect(() => {
+        registerWorkspaceActions({
+            newWorkspace: handleAdd,
+        });
+        return () => unregisterWorkspaceActions();
+    }, [handleAdd]);
 
     const handleDelete = React.useCallback(
         (e: React.MouseEvent, id: number) => {

@@ -13,6 +13,7 @@ import {
   dispatchMoveCellUp,
   dispatchMoveCellDown,
 } from "./editor/CellActionDispatcher";
+import { dispatchNewWorkspace } from "./editor/WorkspaceActionDispatcher";
 import { exportWorkspaceById, importMarkdown } from "./services/importExport";
 import { checkForUpdates } from "./services/updater";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -46,6 +47,10 @@ const App: React.FC = () => {
     if (action === "duplicate_cell") dispatchDuplicateCell();
     if (action === "move_cell_up") dispatchMoveCellUp();
     if (action === "move_cell_down") dispatchMoveCellDown();
+
+    if (action === "new_workspace" || action === "ws_new_workspace") {
+      dispatchNewWorkspace();
+    }
 
     if (action === "check_updates") {
       checkForUpdates();

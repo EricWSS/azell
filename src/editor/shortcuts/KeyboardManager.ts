@@ -5,6 +5,7 @@ import {
     dispatchMoveCellUp,
     dispatchMoveCellDown,
 } from "../CellActionDispatcher";
+import { dispatchNewWorkspace } from "../WorkspaceActionDispatcher";
 
 // ── Shortcut Definition ──
 
@@ -78,6 +79,15 @@ const shortcuts: ShortcutDef[] = [
         alt: true,
         key: "ArrowDown",
         handler: () => { dispatchMoveCellDown(); },
+    },
+
+    // ── Workspace Manipulation ──
+    {
+        id: "new_workspace",
+        label: "New Workspace",
+        ctrl: true,
+        key: "n",
+        handler: () => { dispatchNewWorkspace(); },
     },
 
 ];

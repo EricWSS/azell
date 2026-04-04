@@ -1,6 +1,30 @@
 import { Command } from '../Command';
 import { trashStore } from '../../../store/TrashStore';
-import { renameWorkspace } from '../../../services/api';
+import { renameWorkspace, createWorkspace } from '../../../services/api';
+
+export class CreateWorkspaceCommand implements Command {
+    private wsId: number | null = null;
+    constructor(private name: string, private onSelect: (id: number | null) => void, private onUpdate: () => void) { }
+
+    async execute() {
+        if (this.wsId === null) {
+            const ws = await createWorkspace(this.name);
+            this.wsId = ws.id;
+        } else {
+            trashStore.restoreWorkspace(this.wsId);
+        }
+        this.onSelect(this.wsId);
+        this.onUpdate();
+    }
+
+    undo() {
+        if (this.wsId !== null) {
+            trashStore.softDeleteWorkspace(this.wsId);
+            this.onSelect(null);
+            this.onUpdate();
+        }
+    }
+}
 
 export class DeleteWorkspaceCommand implements Command {
     constructor(private wsId: number, private onUpdate: () => void, private onRestore?: () => void) { }
