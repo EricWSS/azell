@@ -13,7 +13,7 @@ import {
   dispatchMoveCellUp,
   dispatchMoveCellDown,
 } from "./editor/CellActionDispatcher";
-import { dispatchNewWorkspace } from "./editor/WorkspaceActionDispatcher";
+import { dispatchNewWorkspace, dispatchCloseWorkspace } from "./editor/WorkspaceActionDispatcher";
 import { exportWorkspaceById, importMarkdown } from "./services/importExport";
 import { checkForUpdates } from "./services/updater";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -29,6 +29,32 @@ const App: React.FC = () => {
   const [showThemeSettings, setShowThemeSettings] = React.useState(false);
 
   const isDragging = React.useRef(false);
+  const isClosing = React.useRef(false);
+
+  const handleAppExit = React.useCallback(async () => {
+    if (isClosing.current) return;
+    isClosing.current = true;
+    console.log("🚨 [App] Close requested! Initiating Hard Delete flush...");
+    try {
+      const { workspaces, tabs, cells } = trashStore.getSnapshot();
+
+      const promises: Promise<void>[] = [];
+      Array.from(cells).forEach(id => promises.push(deleteCell(id).catch(console.error)));
+      Array.from(tabs).forEach(id => promises.push(deleteTab(id).catch(console.error)));
+      Array.from(workspaces).forEach(id => promises.push(deleteWorkspace(id).catch(console.error)));
+
+      // Ensure we NEVER hang the UI closing permanently
+      await Promise.race([
+        Promise.all(promises),
+        new Promise((resolve) => setTimeout(resolve, 1000))
+      ]);
+    } catch (err) {
+      console.error("Erro ao limpar lixeira durante fechamento", err);
+    } finally {
+      const { exit } = await import("@tauri-apps/plugin-process");
+      await exit(0);
+    }
+  }, []);
 
   const handleSelectWorkspace = React.useCallback((id: number) => {
     setActiveWorkspaceId(id);
@@ -50,6 +76,14 @@ const App: React.FC = () => {
 
     if (action === "new_workspace" || action === "ws_new_workspace") {
       dispatchNewWorkspace();
+    }
+
+    if (action === "close_workspace") {
+      dispatchCloseWorkspace();
+    }
+
+    if (action === "exit") {
+      handleAppExit();
     }
 
     if (action === "check_updates") {
@@ -116,39 +150,16 @@ const App: React.FC = () => {
 
   // ── Intercept Window Close to Flush Soft Deletes ──
   React.useEffect(() => {
-    let isClosing = false;
     const w = getCurrentWindow();
     const unlistenPromise = w.onCloseRequested(async (event) => {
-      console.log("🚨 [App] Close requested! Initiating Hard Delete flush...");
-      if (isClosing) return; // Prevent infinite close loop Native -> JS -> Native
-      isClosing = true;
       event.preventDefault();
-
-      try {
-        const { workspaces, tabs, cells } = trashStore.getSnapshot();
-
-        const promises: Promise<void>[] = [];
-        Array.from(cells).forEach(id => promises.push(deleteCell(id).catch(console.error)));
-        Array.from(tabs).forEach(id => promises.push(deleteTab(id).catch(console.error)));
-        Array.from(workspaces).forEach(id => promises.push(deleteWorkspace(id).catch(console.error)));
-
-        // Ensure we NEVER hang the UI closing permanently
-        await Promise.race([
-          Promise.all(promises),
-          new Promise((resolve) => setTimeout(resolve, 1000))
-        ]);
-      } catch (err) {
-        console.error("Erro ao limpar lixeira durante fechamento", err);
-      } finally {
-        const { exit } = await import("@tauri-apps/plugin-process");
-        await exit(0);
-      }
+      handleAppExit();
     });
 
     return () => {
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, []);
+  }, [handleAppExit]);
 
   return (
     <LanguageProvider>

@@ -3,7 +3,7 @@ import type { Workspace } from "../types";
 import { getWorkspaces } from "../services/api";
 import { useTrash } from "../context/TrashContext";
 import { globalHistory } from "../editor/history/GlobalHistoryManager";
-import { CreateWorkspaceCommand, DeleteWorkspaceCommand, RenameWorkspaceCommand } from "../editor/history/commands/WorkspaceCommands";
+import { CreateWorkspaceCommand, DeleteWorkspaceCommand, RenameWorkspaceCommand, CloseWorkspaceCommand } from "../editor/history/commands/WorkspaceCommands";
 import { registerWorkspaceActions, unregisterWorkspaceActions } from "../editor/WorkspaceActionDispatcher";
 
 interface Props {
@@ -42,13 +42,33 @@ const WorkspaceSidebar: React.FC<Props> = ({ activeId, onSelect, width }) => {
         cmd.execute().then(() => globalHistory.push(cmd));
     }, [workspaces.length, onSelect, fetchWorkspaces]);
 
+    const handleCloseWorkspace = React.useCallback(() => {
+        if (activeId === null) return;
+        const cmd = new CloseWorkspaceCommand(
+            activeId,
+            () => { }, // UI will react via useTrash globally 
+            () => { onSelect(activeId); } // Select it when Undo brings it back
+        );
+        cmd.execute();
+        globalHistory.push(cmd);
+
+        const visible = workspaces.filter((w) => !hiddenWorkspaces.has(w.id) && w.id !== activeId);
+        if (visible.length > 0) {
+            onSelect(visible[0].id);
+        } else {
+            // No spaces left
+            onSelect(-1); // or skip since it's nullable 
+        }
+    }, [activeId, hiddenWorkspaces, workspaces, onSelect]);
+
     // Register global actions
     React.useEffect(() => {
         registerWorkspaceActions({
             newWorkspace: handleAdd,
+            closeWorkspace: handleCloseWorkspace
         });
         return () => unregisterWorkspaceActions();
-    }, [handleAdd]);
+    }, [handleAdd, handleCloseWorkspace]);
 
     const handleDelete = React.useCallback(
         (e: React.MouseEvent, id: number) => {

@@ -67,3 +67,5 @@ export class RenameWorkspaceCommand implements Command {
         this.onUpdate();
     }
 }
+
+export class CloseWorkspaceCommand extends DeleteWorkspaceCommand { }

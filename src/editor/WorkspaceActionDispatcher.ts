@@ -1,5 +1,6 @@
 export interface WorkspaceActions {
     newWorkspace: () => void;
+    closeWorkspace: () => void;
 }
 
 let registeredActions: WorkspaceActions | null = null;
@@ -14,4 +15,8 @@ export function unregisterWorkspaceActions(): void {
 
 export function dispatchNewWorkspace(): void {
     registeredActions?.newWorkspace();
+}
+
+export function dispatchCloseWorkspace(): void {
+    registeredActions?.closeWorkspace();
 }
